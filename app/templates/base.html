@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}{{ config.TEAM_NAME }}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>{{ config.TEAM_NAME }}</h1>
+    <nav>
+      <a href="{{ url_for('main.index') }}">Главная</a>
+      <a href="{{ url_for('auth.login') }}">Вход</a>
+      <a href="{{ url_for('auth.register') }}">Регистрация</a>
+      <a href="{{ url_for('auth.logout') }}">Выход</a>
+    </nav>
+  </header>
+  <main>
+    {% with messages = get_flashed_messages() %}
+      {% for msg in messages %}<p class="flash">{{ msg }}</p>{% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

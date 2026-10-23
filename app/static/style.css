@@ -1,0 +1,5 @@
+body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+header { border-bottom: 1px solid #ccc; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+nav a { margin-right: 1rem; }
+.flash { background: #ffeeba; padding: .5rem; border-radius: 4px; }
+code { background: #f2f2f2; padding: 0 .3rem; border-radius: 3px; }
