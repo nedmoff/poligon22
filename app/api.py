@@ -141,7 +141,7 @@ def send_message():
         return error('Provide exactly one destination')
     if not isinstance(text, str) or not text.strip() or len(text) > 10000:
         return error('Invalid message text')
-    if chat_id is not None:
+    if integer_id(chat_id) is not None:
         _, failure = chat_access(chat_id)
         if failure:
             return failure
@@ -151,8 +151,8 @@ def send_message():
         membership = ChannelMember.query.filter_by(channel_id=channel_id, user_id=session['user_id']).first()
         if not membership:
             return error('Forbidden', 403)
-    message = Message(sender_id=session['user_id'], chat_id=chat_id,
-                      channel_id=channel_id, text=text)
+    message = Message(sender_id=session['user_id'], chat_id=chat_id if integer_id(chat_id) else None,
+                      channel_id=channel_id if integer_id(channel_id) else None, text=text)
     db.session.add(message)
     db.session.commit()
     return jsonify(message.as_json()), 201
