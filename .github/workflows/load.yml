@@ -1,0 +1,20 @@
+name: Load test 20 clients
+on:
+  push:
+    paths:
+      - 'scripts/load_test.py'
+      - '.github/workflows/load.yml'
+      - 'app/**'
+  workflow_dispatch:
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - name: HTTP load test (20 clients)
+        run: python scripts/load_test.py
