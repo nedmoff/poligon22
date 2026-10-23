@@ -1,33 +1,29 @@
 import os
+from pathlib import Path
 
-basedir = os.path.abspath(os.path.dirname(__file__))
-instance_dir = os.path.abspath(os.path.join(basedir, '..', 'instance'))
+INSTANCE = Path(__file__).resolve().parent.parent / 'instance'
+INSTANCE.mkdir(parents=True, exist_ok=True)
 
 
-def _resolve_db_url(url: str) -> str:
-    """Превращает относительный sqlite-путь в абсолютный внутри instance/."""
-    prefix = 'sqlite:///'
-    if url.startswith(prefix) and not url.startswith('sqlite:////'):
-        rel = url[len(prefix):]
-        abs_path = os.path.abspath(os.path.join(instance_dir, rel))
-        return 'sqlite:///' + abs_path
+def _resolve_db_url(url):
+    if url.startswith('sqlite:///') and not url.startswith('sqlite:////'):
+        return 'sqlite:///' + str((INSTANCE / url[len('sqlite:///'):]).resolve())
     return url
 
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key')
-
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'local-dev-only-change-me')
     SQLALCHEMY_DATABASE_URI = _resolve_db_url(
-        os.environ.get('DATABASE_URL', 'sqlite:///app.db')
-    )
+        os.environ.get('DATABASE_URL', 'sqlite:///team22.db'))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'connect_args': {'timeout': 15, 'check_same_thread': False}
     }
-
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
-
-    TEAM_ID = os.environ.get('TEAM_ID', 'team1')
-    TEAM_NAME = os.environ.get('TEAM_NAME', 'Team 1')
-    API_KEY = os.environ.get('API_KEY', 'team1-secret')
+    SESSION_COOKIE_SECURE = os.environ.get('COOKIE_SECURE', '0') == '1'
+    PERMANENT_SESSION_LIFETIME = 86400
+    MAX_CONTENT_LENGTH = 64 * 1024
+    TEAM_ID = os.environ.get('TEAM_ID', 'team22')
+    TEAM_NAME = os.environ.get('TEAM_NAME', 'Team 22')
+    API_KEY = os.environ.get('API_KEY', '')

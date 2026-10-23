@@ -1,74 +1,42 @@
-# Starter — Корпоративный мессенджер
+# Poligon22 — защищённый корпоративный мессенджер
 
-Заготовка приложения для команды. Здесь есть только базовая авторизация,
-здоровый `/api/v1/health` и пустая вёрстка. Всё остальное вы пишете сами.
+Flask REST API, SQLite/SQLAlchemy, сессионная авторизация. Реализованы все блоки `docs/features.md`.
 
-## Установка
-
-Windows (PowerShell):
-
-```powershell
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-Copy-Item .env.example .env
-python -m flask --app wsgi init-db
-python -m flask --app wsgi run --port 5001
-```
-
-Linux/macOS:
+## Запуск
 
 ```bash
-python -m venv venv
-source venv/bin/activate
+python -m venv .venv
+# Linux/macOS: source .venv/bin/activate
+# Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env
+cp .env.example .env  # Windows: copy .env.example .env
 python -m flask --app wsgi init-db
-python -m flask --app wsgi run --port 5001
+python -m flask --app wsgi run --port 5002
 ```
 
-Порт зависит от команды: team1 — 5001, team2 — 5002 и т.д.
+Перед развёртыванием установите случайный SECRET_KEY и `COOKIE_SECURE=1` при HTTPS. Встроенный Flask-сервер — только для разработки.
 
-## Проверка
+## API
 
-- Открыть http://127.0.0.1:5001 — должна открыться стартовая страница.
-- Открыть http://127.0.0.1:5001/api/v1/health — должен вернуться JSON
-  с `status: "ok"` и вашим `team_id`.
+POST/GET `/api/v1/channels`, POST `/api/v1/channels/<id>/join`,
+POST/GET `/api/v1/chats`, POST `/api/v1/messages`,
+GET `/api/v1/chats/<id>/messages`, GET `/api/v1/channels/<id>/messages`,
+GET `/api/v1/messages/search?q=...`, POST `/api/v1/profile`,
+GET `/api/v1/chats/<id>/export?format=txt`,
+GET `/api/v1/channels/<id>/export?format=txt`.
+Публичный профиль: `GET /u/<username>`.
+Авторизация через обычные формы `/register`, `/login`.
+Все API кроме `/api/v1/health` требуют входа.
 
-## Структура
+## Безопасность
 
+Проверки членства для приватных чатов и отправки сообщений; ORM с параметризацией поиска; автоэкранирование Jinja; экспорт только в фиксированном формате txt (без произвольных путей); лимит логина 8 ошибок / 15 минут по IP+логину; SameSite=Lax и HttpOnly cookies. В production дополнительно нужны HTTPS, ограничения на уровне reverse proxy, мониторинг и CSRF-защита форм.
+
+## Тесты
+
+```bash
+pip install pytest
+python -m pytest -q
 ```
-app/
-├── __init__.py     # create_app и CLI-команда init-db
-├── config.py       # конфигурация и резолв DATABASE_URL
-├── extensions.py   # db = SQLAlchemy()
-├── models.py       # User (готов), добавьте остальные модели сами
-├── auth.py         # регистрация, логин, логаут
-├── api.py          # /api/v1/health (готов), добавьте остальные эндпоинты
-├── main.py         # главная страница
-├── templates/      # Jinja-шаблоны
-└── static/         # стили
-```
 
-## Что уже работает
-
-- `GET  /` — главная
-- `GET  /register` — форма регистрации
-- `POST /register`
-- `GET  /login` — форма входа
-- `POST /login`
-- `GET  /logout`
-- `GET  /api/v1/health`
-
-## Что нужно сделать
-
-Полное ТЗ — в `docs/features.md`. Кратко: публичные каналы, приватные чаты,
-сообщения, поиск, публичный профиль, экспорт истории. 8 фич, все
-эндпоинты под `/api/v1/`.
-
-## Про безопасность и производительность
-
-Referee будет автоматически атаковать ваш сервис и замерять время ответа.
-Что именно он проверяет — в `docs/vulnerabilities.md`. Как начисляются
-очки — в `docs/scoring.md`. Прочитайте оба документа **до** того, как
-начнёте писать код.
+Важно: существующие схемы SQLite starter не меняются миграциями автоматически — на свежем окружении используйте init-db. Ветка предназначена для запуска с отдельной тестовой БД.
