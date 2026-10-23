@@ -1,7 +1,8 @@
 from io import BytesIO
 from functools import wraps
-from flask import Blueprint, jsonify, request, session, current_app, send_file, render_template
-from sqlalchemy import or_, and_
+from flask import Blueprint, jsonify, request, session, current_app, send_file
+from sqlalchemy import or_
+from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 from .extensions import db
 from .models import User, Chat, Channel, ChannelMember, Message
@@ -164,7 +165,7 @@ def chat_messages(chat_id):
     _, failure = chat_access(chat_id)
     if failure:
         return failure
-    messages = Message.query.filter_by(chat_id=chat_id).order_by(Message.id).all()
+    messages = Message.query.options(joinedload(Message.sender)).filter_by(chat_id=chat_id).order_by(Message.id).all()
     return jsonify([m.as_json() for m in messages])
 
 
@@ -173,7 +174,7 @@ def chat_messages(chat_id):
 def channel_messages(channel_id):
     if not db.session.get(Channel, channel_id):
         return error('Channel not found', 404)
-    messages = Message.query.filter_by(channel_id=channel_id).order_by(Message.id).all()
+    messages = Message.query.options(joinedload(Message.sender)).filter_by(channel_id=channel_id).order_by(Message.id).all()
     return jsonify([m.as_json() for m in messages])
 
 
@@ -186,7 +187,7 @@ def search_messages():
     uid = session['user_id']
     accessible_chats = db.session.query(Chat.id).filter(
         or_(Chat.user_low_id == uid, Chat.user_high_id == uid))
-    statement = Message.query.filter(
+    statement = Message.query.options(joinedload(Message.sender)).filter(
         Message.text.contains(q, autoescape=True),
         or_(Message.channel_id.isnot(None), Message.chat_id.in_(accessible_chats))
     ).order_by(Message.id.desc()).limit(200)
