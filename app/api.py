@@ -50,6 +50,23 @@ def chat_json(chat):
     return {'id': chat.id, 'user_ids': [chat.user_low_id, chat.user_high_id]}
 
 
+
+def message_rows(*filters, limit=None, descending=False):
+    """Fetch message projections with one joined query."""
+    stmt = db.select(
+        Message.id, Message.sender_id, User.username,
+        Message.chat_id, Message.channel_id, Message.text, Message.created_at
+    ).join(User, Message.sender_id == User.id).where(*filters)
+    stmt = stmt.order_by(Message.id.desc() if descending else Message.id.asc())
+    if limit is not None:
+        stmt = stmt.limit(limit)
+    return [{
+        'id': row.id, 'sender_id': row.sender_id, 'username': row.username,
+        'chat_id': row.chat_id, 'channel_id': row.channel_id,
+        'text': row.text, 'created_at': row.created_at.isoformat() + 'Z'
+    } for row in db.session.execute(stmt)]
+
+
 @bp.get('/health')
 def health():
     return jsonify(status='ok', team_id=current_app.config['TEAM_ID'],
@@ -165,8 +182,7 @@ def chat_messages(chat_id):
     _, failure = chat_access(chat_id)
     if failure:
         return failure
-    messages = Message.query.options(joinedload(Message.sender)).filter_by(chat_id=chat_id).order_by(Message.id).all()
-    return jsonify([m.as_json() for m in messages])
+    return jsonify(message_rows(Message.chat_id == chat_id))
 
 
 @bp.get('/channels/<int:channel_id>/messages')
@@ -174,8 +190,7 @@ def chat_messages(chat_id):
 def channel_messages(channel_id):
     if not db.session.get(Channel, channel_id):
         return error('Channel not found', 404)
-    messages = Message.query.options(joinedload(Message.sender)).filter_by(channel_id=channel_id).order_by(Message.id).all()
-    return jsonify([m.as_json() for m in messages])
+    return jsonify(message_rows(Message.channel_id == channel_id))
 
 
 @bp.get('/messages/search')
@@ -187,11 +202,11 @@ def search_messages():
     uid = session['user_id']
     accessible_chats = db.session.query(Chat.id).filter(
         or_(Chat.user_low_id == uid, Chat.user_high_id == uid))
-    statement = Message.query.options(joinedload(Message.sender)).filter(
+    return jsonify(message_rows(
         Message.text.contains(q, autoescape=True),
-        or_(Message.channel_id.isnot(None), Message.chat_id.in_(accessible_chats))
-    ).order_by(Message.id.desc()).limit(200)
-    return jsonify([m.as_json() for m in statement.all()])
+        or_(Message.channel_id.isnot(None), Message.chat_id.in_(accessible_chats)),
+        limit=200, descending=True
+    ))
 
 
 @bp.post('/profile')
@@ -207,7 +222,7 @@ def update_profile():
 
 
 def export_messages(messages, name):
-    text = '\n'.join(f'[{m.created_at.isoformat()}Z] {m.sender.username}: {m.text}' for m in messages)
+    text = '\n'.join(f"[{m['created_at']}] {m['username']}: {m['text']}" for m in messages)
     output = BytesIO(text.encode('utf-8'))
     return send_file(output, mimetype='text/plain; charset=utf-8', as_attachment=True, download_name=name)
 
