@@ -239,8 +239,7 @@ def export_chat(chat_id):
         return failure
     if not export_format_ok():
         return error('Only txt supported')
-    messages = Message.query.filter_by(chat_id=chat_id).order_by(Message.id).all()
-    return export_messages(messages, f'chat_{chat_id}.txt')
+    return export_messages(message_rows(Message.chat_id == chat_id), f'chat_{chat_id}.txt')
 
 
 @bp.get('/channels/<int:channel_id>/export')
@@ -250,5 +249,4 @@ def export_channel(channel_id):
         return error('Channel not found', 404)
     if not export_format_ok():
         return error('Only txt supported')
-    messages = Message.query.filter_by(channel_id=channel_id).order_by(Message.id).all()
-    return export_messages(messages, f'channel_{channel_id}.txt')
+    return export_messages(message_rows(Message.channel_id == channel_id), f'channel_{channel_id}.txt')
