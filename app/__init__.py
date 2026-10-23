@@ -37,6 +37,13 @@ def create_app(config_class=Config):
     app.register_blueprint(api_bp, url_prefix='/api/v1')
     app.register_blueprint(main_bp)
 
+    @app.after_request
+    def security_headers(response):
+        response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+        response.headers.setdefault('X-Frame-Options', 'DENY')
+        response.headers.setdefault('Referrer-Policy', 'no-referrer')
+        return response
+
     @app.cli.command('init-db')
     def init_db():
         db.create_all()
