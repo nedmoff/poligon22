@@ -34,7 +34,7 @@ def percentile(values, p):
     return round(values[lo] + (values[hi] - values[lo]) * (index - lo), 2)
 
 
-def http(opener, base, method, path, data=None, form=False):
+def request_timed(opener, base, method, path, data=None, form=False):
     body = None
     headers = {}
     if data is not None:
@@ -72,11 +72,11 @@ def worker(index, base, barrier):
     opener.open(urllib.request.Request(base + '/login', data=login), timeout=12).read()
     barrier.wait(timeout=20)
     for n in range(ROUNDS):
-        http(opener, base, 'GET', '/api/v1/health')
-        http(opener, base, 'GET', '/api/v1/channels')
-        http(opener, base, 'GET', '/api/v1/channels/1/messages')
-        http(opener, base, 'GET', '/api/v1/messages/search?q=hello')
-        http(opener, base, 'POST', '/api/v1/messages',
+        request_timed(opener, base, 'GET', '/api/v1/health')
+        request_timed(opener, base, 'GET', '/api/v1/channels')
+        request_timed(opener, base, 'GET', '/api/v1/channels/1/messages')
+        request_timed(opener, base, 'GET', '/api/v1/messages/search?q=hello')
+        request_timed(opener, base, 'POST', '/api/v1/messages',
              {'channel_id': 1, 'text': f'load message {index}-{n}'})
 
 
